@@ -248,7 +248,7 @@ Reply with ONLY valid JSON, no markdown fences, no preamble:
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.2, maxOutputTokens: 900 }
+            generationConfig: { temperature: 0.2, maxOutputTokens: 900, responseMimeType: 'application/json' }
           })
         }
       );
@@ -267,10 +267,43 @@ Reply with ONLY valid JSON, no markdown fences, no preamble:
 
     const data = await response.json();
     const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const clean = raw.replace(/```json|```/g, '').trim();
 
-    try { return JSON.parse(clean); }
-    catch { throw new Error('Could not parse response. Try again.'); }
+    // Try multiple strategies to extract valid JSON
+    let parsed = null;
+
+    // Strategy 1: direct parse
+    try { parsed = JSON.parse(raw.trim()); } catch(_) {}
+
+    // Strategy 2: strip markdown fences
+    if (!parsed) {
+      try {
+        const s = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+        parsed = JSON.parse(s);
+      } catch(_) {}
+    }
+
+    // Strategy 3: extract first { ... } block
+    if (!parsed) {
+      try {
+        const match = raw.match(/\{[\s\S]*\}/);
+        if (match) parsed = JSON.parse(match[0]);
+      } catch(_) {}
+    }
+
+    // Strategy 4: plain text fallback — display as-is
+    if (!parsed && raw.length > 20) {
+      parsed = {
+        word: word,
+        partOfSpeech: 'term',
+        coreMeaning: raw.slice(0, 400),
+        deepExplanation: raw.slice(0, 900),
+        relatedTerms: [],
+        notInStandardDicts: true
+      };
+    }
+
+    if (!parsed) throw new Error('No response received. Try again.');
+    return parsed;
   }
 
   // ── Display ──
