@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Lexicon AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #0f0e0a; --paper: #f5f0e8; --amber: #c8860a;
+    --rust: #8b2e00; --cream: #ede8dc; --muted: #7a7060; --line: #c8bfad;
+  }
+  body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+
+  header {
+    padding: 1.5rem 1.2rem 1rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap;
+  }
+  .logo { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; letter-spacing: -0.02em; }
+  .logo span { color: var(--amber); font-style: italic; }
+  .tagline { font-size: 0.72rem; font-weight: 300; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; border-left: 2px solid var(--line); padding-left: 0.8rem; }
+
+  main { max-width: 700px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+
+  /* Key setup */
+  .key-box { border: 2px solid var(--ink); padding: 1.5rem; margin-bottom: 1.5rem; }
+  .key-box h2 { font-family: 'Playfair Display', serif; font-size: 1.2rem; margin-bottom: 0.4rem; }
+  .key-box p { font-size: 0.83rem; color: var(--muted); line-height: 1.6; margin-bottom: 1rem; }
+  .key-box a { color: var(--amber); }
+  .key-row { display: flex; border: 2px solid var(--ink); overflow: hidden; }
+  .key-row input { flex: 1; padding: 0.7rem 0.9rem; font-size: 0.9rem; border: none; outline: none; font-family: 'DM Sans', sans-serif; background: white; }
+  .key-row button { padding: 0 1.1rem; background: var(--ink); color: var(--paper); border: none; cursor: pointer; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
+  .key-row button:hover { background: var(--amber); }
+  .key-saved { font-size: 0.78rem; color: green; margin-top: 0.4rem; display: none; }
+  .key-error { font-size: 0.78rem; color: var(--rust); margin-top: 0.4rem; display: none; }
+  .change-key { font-size: 0.75rem; color: var(--muted); cursor: pointer; text-decoration: underline; margin-top: 0.5rem; display: inline-block; }
+
+  /* Search */
+  .search-label { font-family: 'Playfair Display', serif; font-size: 0.95rem; font-style: italic; color: var(--muted); display: block; margin-bottom: 0.5rem; }
+  .search-row { display: flex; border: 2px solid var(--ink); background: white; overflow: hidden; transition: box-shadow 0.2s; }
+  .search-row:focus-within { box-shadow: 4px 4px 0 var(--amber); }
+  #wordInput { flex: 1; padding: 0.8rem 1rem; font-family: 'Playfair Display', serif; font-size: 1.05rem; border: none; outline: none; background: transparent; }
+  #wordInput::placeholder { color: var(--line); font-style: italic; }
+  #searchBtn { padding: 0 1.3rem; background: var(--ink); color: var(--paper); border: none; cursor: pointer; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+  #searchBtn:hover { background: var(--amber); }
+  #searchBtn:disabled { background: var(--muted); cursor: not-allowed; }
+
+  .suggestions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.8rem; }
+  .suggestion-label { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; align-self: center; }
+  .chip { padding: 0.28rem 0.65rem; border: 1.5px solid var(--line); background: transparent; font-size: 0.78rem; color: var(--ink); cursor: pointer; }
+  .chip:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  /* Result */
+  #result { margin-top: 1.8rem; animation: fadeUp 0.4s ease; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+  .word-header { border-top: 3px solid var(--ink); border-bottom: 1px solid var(--line); padding: 1.2rem 0 1rem; }
+  .word-title { font-family: 'Playfair Display', serif; font-size: clamp(1.8rem, 7vw, 3rem); font-weight: 900; line-height: 1; letter-spacing: -0.02em; }
+  .word-title em { color: var(--amber); font-style: italic; }
+  .word-meta { display: flex; align-items: center; gap: 0.7rem; margin-top: 0.5rem; flex-wrap: wrap; }
+  .pos-badge { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--paper); background: var(--rust); padding: 0.18rem 0.55rem; }
+  .ai-badge { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber); border: 1.5px solid var(--amber); padding: 0.16rem 0.5rem; }
+  .no-dict-badge { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rust); border: 1.5px solid var(--rust); padding: 0.16rem 0.5rem; }
+
+  .field-block { padding: 1rem 0; border-bottom: 1px solid var(--line); }
+  .field-label { font-size: 0.65rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--amber); margin-bottom: 0.4rem; }
+  .field-content { font-size: 0.95rem; line-height: 1.7; }
+  .field-content.big { font-family: 'Playfair Display', serif; font-size: 1.05rem; line-height: 1.65; }
+  .related-list { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem; }
+  .related-pill { padding: 0.22rem 0.65rem; background: var(--cream); border: 1px solid var(--line); font-size: 0.8rem; cursor: pointer; }
+  .related-pill:hover { background: var(--ink); color: var(--paper); }
+  .example-box { border-left: 3px solid var(--amber); padding: 0.55rem 0.9rem; background: var(--cream); font-style: italic; font-size: 0.9rem; line-height: 1.6; }
+
+  /* Loading */
+  .loading-state { padding: 2.5rem 0; text-align: center; }
+  .loading-word { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-style: italic; color: var(--muted); animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:0.3;} 50%{opacity:1;} }
+  .loading-sub { font-size: 0.74rem; color: var(--line); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 0.4rem; }
+
+  /* Error */
+  .error-state { padding: 1.5rem; border: 2px solid var(--rust); background: #fff5f0; color: var(--rust); font-size: 0.88rem; line-height: 1.6; }
+  .error-state a { color: var(--rust); cursor: pointer; text-decoration: underline; }
+
+  /* History */
+  .history-section { margin-top: 2rem; padding-top: 1.2rem; border-top: 1px dashed var(--line); }
+  .history-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.6rem; }
+  .history-list { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .history-item { font-family: 'Playfair Display', serif; font-style: italic; font-size: 0.88rem; color: var(--muted); cursor: pointer; padding: 0.1rem 0; border-bottom: 1px solid transparent; }
+  .history-item:hover { color: var(--amber); border-bottom-color: var(--amber); }
+  .history-item + .history-item::before { content: '·'; margin-right: 0.35rem; color: var(--line); }
+
+  footer { text-align: center; padding: 1.2rem; font-size: 0.7rem; color: var(--line); letter-spacing: 0.08em; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Lexi<span>con</span> AI</div>
+  <div class="tagline">Words standard dictionaries don't know</div>
+</header>
+
+<main>
+
+  <!-- API Key Section -->
+  <div id="keySection"></div>
+
+  <!-- Search -->
+  <div class="search-section" style="margin-bottom:1.5rem;">
+    <label class="search-label" for="wordInput">Enter any word — common, academic, political, emerging…</label>
+    <div class="search-row">
+      <input type="text" id="wordInput" placeholder="e.g. Ethnonationalism, Petro-state…" autocomplete="off" />
+      <button id="searchBtn" onclick="lookupWord()">Define →</button>
+    </div>
+    <div class="suggestions">
+      <span class="suggestion-label">Try:</span>
+      <button class="chip" onclick="quickSearch('Ethnonationalism')">Ethnonationalism</button>
+      <button class="chip" onclick="quickSearch('Ethnic politics')">Ethnic politics</button>
+      <button class="chip" onclick="quickSearch('Decoloniality')">Decoloniality</button>
+      <button class="chip" onclick="quickSearch('Petro-state')">Petro-state</button>
+      <button class="chip" onclick="quickSearch('Afropessimism')">Afropessimism</button>
+    </div>
+  </div>
+
+  <div id="result"></div>
+
+  <div id="historySection" class="history-section" style="display:none">
+    <div class="history-label">Recent lookups</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+</main>
+
+<footer>Powered by Gemini AI (Free, 1500 req/day) · Never expires</footer>
+
+<script>
+  const searchHistory = [];
+  let apiKey = localStorage.getItem('geminkey') || '';
+
+  // ── Init ──
+  window.addEventListener('DOMContentLoaded', () => {
+    renderKeySection();
+    document.getElementById('wordInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') lookupWord();
+    });
+  });
+
+  // ── Key UI ──
+  function renderKeySection() {
+    const sec = document.getElementById('keySection');
+    if (apiKey) {
+      sec.innerHTML = `
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem;padding:0.5rem 0.8rem;border:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;">
+          <span>✓ Gemini API key saved</span>
+          <span class="change-key" onclick="clearKey()">Change key</span>
+        </div>`;
+    } else {
+      sec.innerHTML = `
+        <div class="key-box">
+          <h2>Enter your free Gemini API Key</h2>
+          <p>
+            Get a <strong>free key</strong> (no credit card, never expires, 1500 lookups/day) from<br>
+            <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>
+            → click <strong>"Create API key"</strong>. It starts with <code>AIza…</code>
+          </p>
+          <div class="key-row">
+            <input type="password" id="keyInput" placeholder="Paste your AIza… key here" />
+            <button onclick="saveKey()">Save →</button>
+          </div>
+          <div id="keyError" class="key-error">Key must start with AIza… — check and try again.</div>
+        </div>`;
+    }
+  }
+
+  function saveKey() {
+    const k = document.getElementById('keyInput').value.trim();
+    if (!k.startsWith('AIza')) {
+      document.getElementById('keyError').style.display = 'block';
+      return;
+    }
+    apiKey = k;
+    localStorage.setItem('geminkey', k);
+    renderKeySection();
+  }
+
+  function clearKey() {
+    apiKey = '';
+    localStorage.removeItem('geminkey');
+    renderKeySection();
+    document.getElementById('result').innerHTML = '';
+  }
+
+  // ── Search ──
+  function quickSearch(word) {
+    document.getElementById('wordInput').value = word;
+    lookupWord();
+  }
+
+  async function lookupWord() {
+    if (!apiKey) {
+      document.getElementById('result').innerHTML = `<div class="error-state">Please enter your Gemini API key above first.</div>`;
+      return;
+    }
+    const word = document.getElementById('wordInput').value.trim();
+    if (!word) return;
+
+    const btn = document.getElementById('searchBtn');
+    btn.disabled = true; btn.textContent = '…';
+    showLoading(word);
+
+    try {
+      const def = await fetchDefinition(word);
+      showResult(word, def);
+      addToHistory(word);
+    } catch(err) {
+      showError(err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Define →';
+    }
+  }
+
+  // ── Gemini API Call ──
+  async function fetchDefinition(word) {
+    const prompt = `You are a comprehensive dictionary specializing in ALL words — political, academic, sociological, emerging, and niche terms that standard dictionaries often miss.
+
+Define: "${word}"
+
+Reply with ONLY valid JSON, no markdown fences, no preamble:
+{
+  "word": "${word}",
+  "partOfSpeech": "noun/verb/adjective/phrase/concept/etc",
+  "coreMeaning": "1-2 sentence core definition",
+  "deepExplanation": "3-5 sentence explanation with nuance, context, and significance",
+  "origin": "etymology or origin — when coined, by whom, from what roots",
+  "usageContext": "fields or discourse where this term appears",
+  "example": "one realistic example sentence",
+  "relatedTerms": ["term1","term2","term3"],
+  "notInStandardDicts": true
+}`;
+
+    let response;
+    try {
+      response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.2, maxOutputTokens: 900 }
+          })
+        }
+      );
+    } catch(e) {
+      throw new Error('Network error — make sure you are online and try again. (' + e.message + ')');
+    }
+
+    if (response.status === 400) {
+      const body = await response.json().catch(()=>({}));
+      const msg = body?.error?.message || 'Bad request';
+      throw new Error('API key rejected: ' + msg + ' — <a onclick="clearKey()">update your key</a>');
+    }
+    if (response.status === 403) throw new Error('API key not authorized. <a onclick="clearKey()">Re-enter your key</a>');
+    if (response.status === 429) throw new Error('Rate limit reached — wait a minute and try again.');
+    if (!response.ok) throw new Error('Error ' + response.status + ' — please try again.');
+
+    const data = await response.json();
+    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const clean = raw.replace(/```json|```/g, '').trim();
+
+    try { return JSON.parse(clean); }
+    catch { throw new Error('Could not parse response. Try again.'); }
+  }
+
+  // ── Display ──
+  function showLoading(word) {
+    document.getElementById('result').innerHTML = `
+      <div class="loading-state">
+        <div class="loading-word">${word}</div>
+        <div class="loading-sub">Gemini is thinking…</div>
+      </div>`;
+  }
+
+  function showResult(word, d) {
+    const pills = (d.relatedTerms||[]).map(t =>
+      `<span class="related-pill" onclick="quickSearch('${t}')">${t}</span>`).join('');
+
+    document.getElementById('result').innerHTML = `
+      <div class="word-header">
+        <div class="word-title">${styleWord(d.word||word)}</div>
+        <div class="word-meta">
+          ${d.partOfSpeech ? `<span class="pos-badge">${d.partOfSpeech}</span>` : ''}
+          <span class="ai-badge">✦ Gemini AI</span>
+          ${d.notInStandardDicts ? `<span class="no-dict-badge">Not in standard dicts</span>` : ''}
+        </div>
+      </div>
+      <div class="field-block">
+        <div class="field-label">Core Meaning</div>
+        <div class="field-content big">${d.coreMeaning||'—'}</div>
+      </div>
+      <div class="field-block">
+        <div class="field-label">Full Explanation</div>
+        <div class="field-content">${d.deepExplanation||'—'}</div>
+      </div>
+      ${d.example?`<div class="field-block"><div class="field-label">Example</div><div class="example-box">"${d.example}"</div></div>`:''}
+      ${d.origin?`<div class="field-block"><div class="field-label">Origin / Etymology</div><div class="field-content">${d.origin}</div></div>`:''}
+      ${d.usageContext?`<div class="field-block"><div class="field-label">Usage Context</div><div class="field-content">${d.usageContext}</div></div>`:''}
+      ${pills?`<div class="field-block"><div class="field-label">Related Terms</div><div class="related-list">${pills}</div></div>`:''}
+    `;
+  }
+
+  function styleWord(w) {
+    if (w.length < 5) return w;
+    const cut = Math.max(Math.floor(w.length*0.55), w.length-4);
+    return w.slice(0,cut) + '<em>' + w.slice(cut) + '</em>';
+  }
+
+  function showError(msg) {
+    document.getElementById('result').innerHTML =
+      `<div class="error-state"><strong>Something went wrong</strong><br>${msg}</div>`;
+  }
+
+  function addToHistory(word) {
+    if (searchHistory.includes(word)) return;
+    searchHistory.unshift(word);
+    if (searchHistory.length > 12) searchHistory.pop();
+    const sec = document.getElementById('historySection');
+    const list = document.getElementById('historyList');
+    sec.style.display = 'block';
+    list.innerHTML = searchHistory.map(w =>
+      `<span class="history-item" onclick="quickSearch('${w}')">${w}</span>`).join('');
+  }
+</script>
+</body>
+</html>
