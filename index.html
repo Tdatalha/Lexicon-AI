@@ -222,19 +222,25 @@
 
   // ── Gemini API Call ──
   async function fetchDefinition(word) {
-    const prompt = `You are a comprehensive dictionary specializing in ALL words — political, academic, sociological, emerging, and niche terms that standard dictionaries often miss.
+    const prompt = `You are a plain-language dictionary. Explain words simply so anyone can understand — like explaining to a smart friend, NOT a professor.
 
 Define: "${word}"
+
+Rules:
+- coreMeaning: max 2 short sentences, simple everyday words, no jargon
+- deepExplanation: max 4 lines total, plain English, easy to read
+- example: one short real-life sentence
+- Keep everything simple and clear
 
 Reply with ONLY valid JSON, no markdown fences, no preamble:
 {
   "word": "${word}",
   "partOfSpeech": "noun/verb/adjective/phrase/concept/etc",
-  "coreMeaning": "1-2 sentence core definition",
-  "deepExplanation": "3-5 sentence explanation with nuance, context, and significance",
-  "origin": "etymology or origin — when coined, by whom, from what roots",
-  "usageContext": "fields or discourse where this term appears",
-  "example": "one realistic example sentence",
+  "coreMeaning": "2 simple sentences a normal person can understand",
+  "deepExplanation": "max 4 plain lines explaining what it really means and why it matters",
+  "origin": "one short sentence on where the word came from",
+  "usageContext": "one short sentence on where you hear this word",
+  "example": "one short simple example sentence",
   "relatedTerms": ["term1","term2","term3"],
   "notInStandardDicts": true
 }`;
@@ -366,4 +372,5 @@ Reply with ONLY valid JSON, no markdown fences, no preamble:
   }
 </script>
 </body>
-</html>
+     </html>
+     
