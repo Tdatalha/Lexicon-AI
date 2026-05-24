@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Lexicon AI</title>
+<meta name="theme-color" content="#0f0e0a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Lexicon AI">
+<link rel="manifest" href="data:application/json,{%22name%22:%22Lexicon%20AI%22,%22short_name%22:%22Lexicon%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23f5f0e8%22,%22theme_color%22:%22%230f0e0a%22,%22description%22:%22AI%20Dictionary%20for%20words%20standard%20dictionaries%20don%27t%20know%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%20192%20192%27%3E%3Crect%20width=%27192%27%20height=%27192%27%20fill=%27%230f0e0a%27/%3E%3Ctext%20x=%2796%27%20y=%27130%27%20font-size=%27120%27%20text-anchor=%27middle%27%20fill=%27%23c8860a%27%20font-family=%27serif%27%3EL%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]}">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -371,6 +377,38 @@ Reply with ONLY valid JSON, no markdown fences, no preamble:
       `<span class="history-item" onclick="quickSearch('${w}')">${w}</span>`).join('');
   }
 </script>
-</body>
-     </html>
+<div id="installBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#0f0e0a;color:#f5f0e8;padding:1rem 1.2rem;display:flex;align-items:center;justify-content:space-between;z-index:1000;gap:1rem;">
+  <div>
+    <div style="font-weight:500;font-size:0.9rem;">Install Lexicon AI</div>
+    <div style="font-size:0.75rem;opacity:0.6;">Add to home screen for easy access</div>
+  </div>
+  <div style="display:flex;gap:0.6rem;">
+    <button onclick="installApp()" style="padding:0.5rem 1rem;background:#c8860a;color:white;border:none;cursor:pointer;font-size:0.82rem;font-weight:500;">Install</button>
+    <button onclick="dismissInstall()" style="padding:0.5rem 0.8rem;background:transparent;color:#f5f0e8;border:1px solid rgba(255,255,255,0.3);cursor:pointer;font-size:0.82rem;">✕</button>
+  </div>
+</div>
+
+<script>
+  // PWA Install
+  let deferredPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Show banner after 3 seconds
+    setTimeout(() => {
+      document.getElementById('installBanner').style.display = 'flex';
+    }, 3000);
+  });
+
+  function installApp() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+      dismissInstall();
+    });
+  }
+
+  function dis
      
